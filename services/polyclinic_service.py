@@ -148,7 +148,7 @@ class PolyclinicService:
             if (appointment.doctor == doctor and
                 appointment.appointment_date == date and
                 appointment.appointment_time == time and
-                appointment.status != "cancelled"):
+                appointment.status != "отменен"):
                 return True
         return False
 
@@ -163,3 +163,82 @@ class PolyclinicService:
     def get_all_appointments(self) -> List[Appointment]:
         """Возвращает все записи."""
         return self.appointments.copy()
+
+    def delete_patient(self, patient_id: int) -> bool:
+        """Удаляет пациента по ID."""
+        for i, patient in enumerate(self.patients):
+            if patient.patient_id == patient_id:
+                # Удаляем связанную медицинскую карту
+                self.medical_records = [record for record in self.medical_records
+                                        if record.patient.patient_id != patient_id]
+                # Удаляем связанные записи на прием
+                self.appointments = [app for app in self.appointments
+                                     if app.patient.patient_id != patient_id]
+                # Удаляем пациента
+                self.patients.pop(i)
+                return True
+        return False
+
+    def delete_doctor(self, doctor_id: int) -> bool:
+        """Удаляет врача по ID."""
+        for i, doctor in enumerate(self.doctors):
+            if doctor.doctor_id == doctor_id:
+                # Проверяем, используется ли врач как заведующий отделением
+                for department in self.departments:
+                    if department.head_doctor.doctor_id == doctor_id:
+                        return False  # Нельзя удалить врача, который заведует отделением
+
+                # Удаляем связанные записи на прием
+                self.appointments = [app for app in self.appointments
+                                     if app.doctor.doctor_id != doctor_id]
+                # Удаляем врача
+                self.doctors.pop(i)
+                return True
+        return False
+
+    def delete_department(self, department_id: int) -> bool:
+        """Удаляет отделение по ID."""
+        for i, department in enumerate(self.departments):
+            if department.department_id == department_id:
+                # Проверяем, есть ли связанные кабинеты
+                if any(room.department.department_id == department_id for room in self.rooms):
+                    return False  # Нельзя удалить отделение с кабинетами
+
+                # Удаляем отделение
+                self.departments.pop(i)
+                return True
+        return False
+
+    def delete_room(self, room_id: int) -> bool:
+        """Удаляет кабинет по ID."""
+        for i, room in enumerate(self.rooms):
+            if room.room_id == room_id:
+                # Проверяем, есть ли связанные записи на прием
+                if any(app.room.room_id == room_id for app in self.appointments):
+                    return False  # Нельзя удалить кабинет с записями
+
+                # Удаляем кабинет
+                self.rooms.pop(i)
+                return True
+        return False
+
+    def delete_service(self, service_id: int) -> bool:
+        """Удаляет услугу по ID."""
+        for i, service in enumerate(self.services):
+            if service.service_id == service_id:
+                # Проверяем, используется ли услуга в записях на прием
+                if any(app.service.service_id == service_id for app in self.appointments):
+                    return False  # Нельзя удалить услугу, используемую в записях
+
+                # Удаляем услугу
+                self.services.pop(i)
+                return True
+        return False
+
+    def delete_appointment(self, appointment_id: int) -> bool:
+        """Удаляет запись на прием по ID."""
+        for i, appointment in enumerate(self.appointments):
+            if appointment.appointment_id == appointment_id:
+                self.appointments.pop(i)
+                return True
+        return False

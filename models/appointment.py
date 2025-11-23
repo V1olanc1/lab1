@@ -17,22 +17,17 @@ class Appointment:
         self.appointment_time = appointment_time
         self.service = service
         self.reason = reason
-        self.status: str = "scheduled"
+        self.status: str = "запланирован"
 
     def complete(self) -> None:
         """Отмечает прием как завершенный."""
-        self.status = "completed"
+        self.status = "завершен"
 
     def cancel(self) -> None:
         """Отменяет прием."""
-        self.status = "cancelled"
+        self.status = "отмене"
 
     def __str__(self) -> str:
-        status_text = {
-            "scheduled": "запланирован",
-            "completed": "завершен",
-            "cancelled": "отменен"
-        }
         return (f"Прием #{self.appointment_id}: {self.patient.get_full_name()} "
                 f"-> {self.doctor.get_full_name()} ({self.appointment_date} "
                 f"{self.appointment_time}) - {status_text[self.status]}")

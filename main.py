@@ -21,10 +21,8 @@ class Validator:
     @staticmethod
     def validate_phone(phone: str) -> bool:
         """Проверяет номер телефона."""
-        # Убираем все нецифровые символы кроме +
         cleaned_phone = re.sub(r'[^\d+]', '', phone)
 
-        # Проверяем российские форматы: +7..., 8..., 7...
         if (cleaned_phone.startswith('+7') and len(cleaned_phone) == 12) or \
                 (cleaned_phone.startswith('8') and len(cleaned_phone) == 11) or \
                 (cleaned_phone.startswith('7') and len(cleaned_phone) == 11):
@@ -38,11 +36,9 @@ class Validator:
         """Проверяет дату в формате ГГГГ-ММ-ДД."""
         try:
             date = datetime.strptime(date_str, '%Y-%m-%d')
-            # Проверяем, что дата не в будущем (для даты рождения)
             if date > datetime.now():
                 print("Дата не может быть в будущем")
                 return False
-            # Проверяем разумный возраст (не старше 150 лет)
             if (datetime.now() - date).days > 150 * 365:
                 print("Неверная дата рождения")
                 return False
@@ -54,15 +50,20 @@ class Validator:
     @staticmethod
     def validate_insurance_number(number: str) -> bool:
         """Проверяет номер страховки - только 16 цифр."""
-        if not number:
-            print("❌ Номер страховки не может быть пустым")
+        cleaned_number = re.sub(r'[\s\-]', '', number)
+
+        if not cleaned_number:
+            print("Номер страховки не может быть пустым")
             return False
-        if len(number) != 16:
-            print("❌ Номер страховки должен содержать ровно 16 цифр")
+
+        if len(cleaned_number) != 16:
+            print("Номер страховки должен содержать ровно 16 цифр")
             return False
-        if not number.isdigit():
-            print("❌ Номер страховки должен содержать только цифры")
+
+        if not cleaned_number.isdigit():
+            print("Номер страховки должен содержать только цифры")
             return False
+
         return True
 
     @staticmethod
@@ -92,7 +93,7 @@ class Validator:
         """Проверяет номер этажа."""
         try:
             floor_num = int(floor)
-            if 1 <= floor_num <= 50:  # Разумные пределы для этажей
+            if 1 <= floor_num <= 50:
                 return True
             else:
                 print("Этаж должен быть от 1 до 50")
@@ -109,15 +110,6 @@ class Validator:
             return False
         if not re.match(r'^[a-zA-Zа-яА-ЯёЁ0-9\-\s]+$', number):
             print("Номер кабинета может содержать только буквы, цифры, пробелы и дефисы")
-            return False
-        return True
-
-    @staticmethod
-    def validate_room_type(room_type: str) -> bool:
-        """Проверяет тип кабинета."""
-        valid_types = ['examination', 'procedure', 'surgery', 'consultation', 'other']
-        if room_type.lower() not in valid_types:
-            print(f"Неверный тип кабинета. Допустимые: {', '.join(valid_types)}")
             return False
         return True
 
@@ -140,7 +132,7 @@ class Validator:
         """Проверяет длительность в минутах."""
         try:
             duration_num = int(duration)
-            if 1 <= duration_num <= 480:  # От 1 минуты до 8 часов
+            if 1 <= duration_num <= 480:
                 return True
             else:
                 print("Длительность должна быть от 1 до 480 минут")
@@ -168,7 +160,7 @@ class Validator:
         try:
             time = datetime.strptime(time_str, '%H:%M')
             hour = time.hour
-            if 8 <= hour <= 20:  # Рабочее время с 8:00 до 20:00
+            if 8 <= hour <= 20:
                 return True
             else:
                 print("Время приема должно быть с 8:00 до 20:00")
@@ -241,6 +233,7 @@ class PolyclinicApp:
         print(f"Создана поликлиника: {name}")
 
     def load_data_menu(self):
+        """Меню загрузки данных."""
         print("\n--- ЗАГРУЗКА ДАННЫХ ---")
         print("1. Загрузить из JSON")
         print("2. Загрузить из XML")
@@ -296,7 +289,8 @@ class PolyclinicApp:
             print("\n--- УПРАВЛЕНИЕ ПАЦИЕНТАМИ ---")
             print("1. Добавить пациента")
             print("2. Просмотреть всех пациентов")
-            print("3. Назад")
+            print("3. Удалить пациента")
+            print("4. Назад")
             choice = input("Выберите действие: ").strip()
 
             if choice == "1":
@@ -304,6 +298,8 @@ class PolyclinicApp:
             elif choice == "2":
                 self.view_patients()
             elif choice == "3":
+                self.delete_patient()
+            elif choice == "4":
                 break
             else:
                 print("Неверный выбор!")
@@ -324,7 +320,7 @@ class PolyclinicApp:
         phone = self.get_valid_input("Телефон: ", self.validator.validate_phone)
         if not phone: return
 
-        insurance_number = self.get_valid_input("Номер страховки: ", self.validator.validate_insurance_number)
+        insurance_number = self.get_valid_input("Номер страховки (16 цифр): ", self.validator.validate_insurance_number)
         if not insurance_number: return
 
         try:
@@ -346,6 +342,33 @@ class PolyclinicApp:
         for i, patient in enumerate(patients, 1):
             print(f"{i}. {patient} (Тел: {patient.phone}, Страховка: {patient.insurance_number})")
 
+    def delete_patient(self):
+        """Удаляет пациента."""
+        patients = self.service.get_all_patients()
+        if not patients:
+            print("Нет пациентов для удаления")
+            return
+
+        print("\n--- УДАЛЕНИЕ ПАЦИЕНТА ---")
+        self.view_patients()
+
+        try:
+            patient_choice = int(input("Выберите номер пациента для удаления: ").strip()) - 1
+            if 0 <= patient_choice < len(patients):
+                patient = patients[patient_choice]
+                confirm = input(f"Вы уверены, что хотите удалить пациента {patient}? (да/нет): ").strip().lower()
+                if confirm == 'да':
+                    if self.service.delete_patient(patient.patient_id):
+                        print(f"Пациент {patient} удален")
+                    else:
+                        print("Не удалось удалить пациента")
+                else:
+                    print("Удаление отменено")
+            else:
+                print("Неверный выбор пациента!")
+        except ValueError:
+            print("Введите корректный номер!")
+
     def doctors_menu(self):
         """Меню управления врачами."""
         if not self.service:
@@ -356,7 +379,8 @@ class PolyclinicApp:
             print("\n--- УПРАВЛЕНИЕ ВРАЧАМИ ---")
             print("1. Добавить врача")
             print("2. Просмотреть всех врачей")
-            print("3. Назад")
+            print("3. Удалить врача")
+            print("4. Назад")
             choice = input("Выберите действие: ").strip()
 
             if choice == "1":
@@ -364,6 +388,8 @@ class PolyclinicApp:
             elif choice == "2":
                 self.view_doctors()
             elif choice == "3":
+                self.delete_doctor()
+            elif choice == "4":
                 break
             else:
                 print("Неверный выбор!")
@@ -409,6 +435,33 @@ class PolyclinicApp:
         for i, doctor in enumerate(doctors, 1):
             print(f"{i}. {doctor} (Тел: {doctor.phone}, Лицензия: {doctor.license_number})")
 
+    def delete_doctor(self):
+        """Удаляет врача."""
+        doctors = self.service.get_all_doctors()
+        if not doctors:
+            print("Нет врачей для удаления")
+            return
+
+        print("\n--- УДАЛЕНИЕ ВРАЧА ---")
+        self.view_doctors()
+
+        try:
+            doctor_choice = int(input("Выберите номер врача для удаления: ").strip()) - 1
+            if 0 <= doctor_choice < len(doctors):
+                doctor = doctors[doctor_choice]
+                confirm = input(f"Вы уверены, что хотите удалить врача {doctor}? (да/нет): ").strip().lower()
+                if confirm == 'да':
+                    if self.service.delete_doctor(doctor.doctor_id):
+                        print(f"Врач {doctor} удален")
+                    else:
+                        print("Не удалось удалить врача (возможно, он заведует отделением)")
+                else:
+                    print("Удаление отменено")
+            else:
+                print("Неверный выбор врача!")
+        except ValueError:
+            print("Введите корректный номер!")
+
     def departments_menu(self):
         """Меню управления отделениями и кабинетами."""
         if not self.service:
@@ -421,7 +474,9 @@ class PolyclinicApp:
             print("2. Добавить кабинет")
             print("3. Просмотреть отделения")
             print("4. Просмотреть кабинеты")
-            print("5. Назад")
+            print("5. Удалить отделение")
+            print("6. Удалить кабинет")
+            print("7. Назад")
             choice = input("Выберите действие: ").strip()
 
             if choice == "1":
@@ -433,6 +488,10 @@ class PolyclinicApp:
             elif choice == "4":
                 self.view_rooms()
             elif choice == "5":
+                self.delete_department()
+            elif choice == "6":
+                self.delete_room()
+            elif choice == "7":
                 break
             else:
                 print("Неверный выбор!")
@@ -447,7 +506,6 @@ class PolyclinicApp:
         floor = self.get_valid_input("Этаж: ", self.validator.validate_floor)
         if not floor: return
 
-        # Показываем список врачей для выбора заведующего
         doctors = self.service.get_all_doctors()
         if not doctors:
             print("Нет доступных врачей!")
@@ -486,11 +544,9 @@ class PolyclinicApp:
         floor = self.get_valid_input("Этаж: ", self.validator.validate_floor)
         if not floor: return
 
-        room_type = self.get_valid_input("Тип кабинета (examination/procedure/surgery/consultation/other): ",
-                                         self.validator.validate_room_type)
+        room_type = input("Тип кабинета: ")
         if not room_type: return
 
-        # Показываем список отделений
         departments = self.service.departments
         if not departments:
             print("Нет доступных отделений!")
@@ -541,6 +597,60 @@ class PolyclinicApp:
         for i, room in enumerate(rooms, 1):
             print(f"{i}. {room} (Отделение: {room.department.name})")
 
+    def delete_department(self):
+        """Удаляет отделение."""
+        departments = self.service.departments
+        if not departments:
+            print("Нет отделений для удаления")
+            return
+
+        print("\n--- УДАЛЕНИЕ ОТДЕЛЕНИЯ ---")
+        self.view_departments()
+
+        try:
+            dept_choice = int(input("Выберите номер отделения для удаления: ").strip()) - 1
+            if 0 <= dept_choice < len(departments):
+                department = departments[dept_choice]
+                confirm = input(f"Вы уверены, что хотите удалить отделение {department}? (да/нет): ").strip().lower()
+                if confirm == 'да':
+                    if self.service.delete_department(department.department_id):
+                        print(f"Отделение {department} удалено")
+                    else:
+                        print("Не удалось удалить отделение (возможно, в нем есть кабинеты)")
+                else:
+                    print("Удаление отменено")
+            else:
+                print("Неверный выбор отделения!")
+        except ValueError:
+            print("Введите корректный номер!")
+
+    def delete_room(self):
+        """Удаляет кабинет."""
+        rooms = self.service.rooms
+        if not rooms:
+            print("Нет кабинетов для удаления")
+            return
+
+        print("\n--- УДАЛЕНИЕ КАБИНЕТА ---")
+        self.view_rooms()
+
+        try:
+            room_choice = int(input("Выберите номер кабинета для удаления: ").strip()) - 1
+            if 0 <= room_choice < len(rooms):
+                room = rooms[room_choice]
+                confirm = input(f"Вы уверены, что хотите удалить кабинет {room}? (да/нет): ").strip().lower()
+                if confirm == 'да':
+                    if self.service.delete_room(room.room_id):
+                        print(f"Кабинет {room} удален")
+                    else:
+                        print("Не удалось удалить кабинет (возможно, на него есть записи)")
+                else:
+                    print("Удаление отменено")
+            else:
+                print("Неверный выбор кабинета!")
+        except ValueError:
+            print("Введите корректный номер!")
+
     def services_menu(self):
         """Меню управления услугами."""
         if not self.service:
@@ -551,7 +661,8 @@ class PolyclinicApp:
             print("\n--- УПРАВЛЕНИЕ УСЛУГАМИ ---")
             print("1. Добавить услугу")
             print("2. Просмотреть все услуги")
-            print("3. Назад")
+            print("3. Удалить услугу")
+            print("4. Назад")
             choice = input("Выберите действие: ").strip()
 
             if choice == "1":
@@ -559,6 +670,8 @@ class PolyclinicApp:
             elif choice == "2":
                 self.view_services()
             elif choice == "3":
+                self.delete_service()
+            elif choice == "4":
                 break
             else:
                 print("Неверный выбор!")
@@ -600,6 +713,33 @@ class PolyclinicApp:
         for i, service in enumerate(services, 1):
             print(f"{i}. {service}")
 
+    def delete_service(self):
+        """Удаляет услугу."""
+        services = self.service.services
+        if not services:
+            print("Нет услуг для удаления")
+            return
+
+        print("\n--- УДАЛЕНИЕ УСЛУГИ ---")
+        self.view_services()
+
+        try:
+            service_choice = int(input("Выберите номер услуги для удаления: ").strip()) - 1
+            if 0 <= service_choice < len(services):
+                service = services[service_choice]
+                confirm = input(f"Вы уверены, что хотите удалить услугу {service}? (да/нет): ").strip().lower()
+                if confirm == 'да':
+                    if self.service.delete_service(service.service_id):
+                        print(f"Услуга {service} удалена")
+                    else:
+                        print("Не удалось удалить услугу (возможно, она используется в записях)")
+                else:
+                    print("Удаление отменено")
+            else:
+                print("Неверный выбор услуги!")
+        except ValueError:
+            print("Введите корректный номер!")
+
     def appointments_menu(self):
         """Меню управления записями на прием."""
         if not self.service:
@@ -610,7 +750,8 @@ class PolyclinicApp:
             print("\n--- ЗАПИСИ НА ПРИЕМ ---")
             print("1. Создать запись")
             print("2. Просмотреть все записи")
-            print("3. Назад")
+            print("3. Удалить запись")
+            print("4. Назад")
             choice = input("Выберите действие: ").strip()
 
             if choice == "1":
@@ -618,6 +759,8 @@ class PolyclinicApp:
             elif choice == "2":
                 self.view_appointments()
             elif choice == "3":
+                self.delete_appointment()
+            elif choice == "4":
                 break
             else:
                 print("Неверный выбор!")
@@ -626,7 +769,6 @@ class PolyclinicApp:
         """Создает новую запись на прием."""
         print("\n--- СОЗДАНИЕ ЗАПИСИ НА ПРИЕМ ---")
 
-        # Выбор пациента
         patients = self.service.get_all_patients()
         if not patients:
             print("Нет доступных пациентов!")
@@ -640,7 +782,6 @@ class PolyclinicApp:
             print("Введите номер!")
             return
 
-        # Выбор врача
         doctors = self.service.get_all_doctors()
         if not doctors:
             print("Нет доступных врачей!")
@@ -654,7 +795,6 @@ class PolyclinicApp:
             print("Введите номер!")
             return
 
-        # Выбор кабинета
         rooms = self.service.rooms
         if not rooms:
             print("Нет доступных кабинетов!")
@@ -668,7 +808,6 @@ class PolyclinicApp:
             print("Введите номер!")
             return
 
-        # Выбор услуги
         services = self.service.services
         if not services:
             print("Нет доступных услуг!")
@@ -682,7 +821,6 @@ class PolyclinicApp:
             print("Введите номер!")
             return
 
-        # Дополнительная информация
         date = self.get_valid_input("Дата приема (ГГГГ-ММ-ДД): ", self.validator.validate_appointment_date)
         if not date: return
 
@@ -728,6 +866,33 @@ class PolyclinicApp:
         for i, appointment in enumerate(appointments, 1):
             print(f"{i}. {appointment}")
 
+    def delete_appointment(self):
+        """Удаляет запись на прием."""
+        appointments = self.service.get_all_appointments()
+        if not appointments:
+            print("Нет записей для удаления")
+            return
+
+        print("\n--- УДАЛЕНИЕ ЗАПИСИ ---")
+        self.view_appointments()
+
+        try:
+            appointment_choice = int(input("Выберите номер записи для удаления: ").strip()) - 1
+            if 0 <= appointment_choice < len(appointments):
+                appointment = appointments[appointment_choice]
+                confirm = input(f"Вы уверены, что хотите удалить запись {appointment}? (да/нет): ").strip().lower()
+                if confirm == 'да':
+                    if self.service.delete_appointment(appointment.appointment_id):
+                        print(f"Запись {appointment} удалена")
+                    else:
+                        print("Не удалось удалить запись")
+                else:
+                    print("Удаление отменено")
+            else:
+                print("Неверный выбор записи!")
+        except ValueError:
+            print("Введите корректный номер!")
+
     def view_all_data(self):
         """Просматривает все данные поликлиники."""
         if not self.service:
@@ -750,7 +915,7 @@ class PolyclinicApp:
 
     def run(self):
         """Запускает главный цикл приложения."""
-        print("🚀 Запуск системы управления поликлиникой")
+        print("Запуск системы управления поликлиникой")
 
         while True:
             self.display_main_menu()
