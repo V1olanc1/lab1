@@ -1,7 +1,7 @@
 from typing import List, Optional
 from models import (
     Patient, Doctor, Department, Room, MedicalService,
-    Diagnosis, Appointment, MedicalRecord, NotFoundError, ValidationError
+    Diagnosis, Appointment, MedicalRecord, NotFoundError, ValidationError, Prescription
 )
 
 class PolyclinicService:
@@ -28,6 +28,7 @@ class PolyclinicService:
         self._next_diagnosis_id = 1
         self._next_appointment_id = 1
         self._next_record_id = 1
+        self._next_prescription_id = 1
 
     def create_patient(self, first_name: str, last_name: str, birth_date: str,
                       phone: str, insurance_number: str) -> Patient:
@@ -242,3 +243,16 @@ class PolyclinicService:
                 self.appointments.pop(i)
                 return True
         return False
+
+    def create_diagnosis(self, code: str, name: str, description: str) -> Diagnosis:
+        """Создает новый диагноз."""
+        diagnosis = Diagnosis(self._next_diagnosis_id, code, name, description)
+        self.diagnoses.append(diagnosis)
+        self._next_diagnosis_id += 1
+        return diagnosis
+
+    def create_prescription(self, medication: str, dosage: str, frequency: str, duration: str) -> Prescription:
+        """Создает новое назначение."""
+        prescription = Prescription(self._next_prescription_id, medication, dosage, frequency, duration)
+        self._next_prescription_id += 1
+        return prescription

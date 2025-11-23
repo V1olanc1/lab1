@@ -39,9 +39,6 @@ class Validator:
             if date > datetime.now():
                 print("Дата не может быть в будущем")
                 return False
-            if (datetime.now() - date).days > 150 * 365:
-                print("Неверная дата рождения")
-                return False
             return True
         except ValueError:
             print("Неверный формат даты. Используйте: ГГГГ-ММ-ДД")
@@ -177,6 +174,46 @@ class Validator:
             return False
         return True
 
+    @staticmethod
+    def validate_diagnosis_code(code: str) -> bool:
+        """Проверяет код диагноза."""
+        if not code or len(code.strip()) < 2:
+            print("Код диагноза должен содержать минимум 2 символа")
+            return False
+        return True
+
+    @staticmethod
+    def validate_medication(medication: str) -> bool:
+        """Проверяет название лекарства."""
+        if not medication or len(medication.strip()) < 2:
+            print("Название лекарства должно содержать минимум 2 символа")
+            return False
+        return True
+
+    @staticmethod
+    def validate_dosage(dosage: str) -> bool:
+        """Проверяет дозировку."""
+        if not dosage or len(dosage.strip()) < 1:
+            print("Дозировка не может быть пустой")
+            return False
+        return True
+
+    @staticmethod
+    def validate_symptoms(symptoms: str) -> bool:
+        """Проверяет симптомы."""
+        if not symptoms or len(symptoms.strip()) < 5:
+            print("Описание симптомов должно содержать минимум 5 символов")
+            return False
+        return True
+
+    @staticmethod
+    def validate_treatment(treatment: str) -> bool:
+        """Проверяет лечение."""
+        if not treatment or len(treatment.strip()) < 5:
+            print("Описание лечения должно содержать минимум 5 символов")
+            return False
+        return True
+
 
 class PolyclinicApp:
     """Класс приложения поликлиники с меню."""
@@ -212,7 +249,8 @@ class PolyclinicApp:
         print("6. Управление отделениями и кабинетами")
         print("7. Управление услугами")
         print("8. Записи на прием")
-        print("9. Просмотр всех данных")
+        print("9. Медицинские карты и диагнозы")
+        print("10. Просмотр всех данных")
         print("0. Выход")
         print("=" * 50)
 
@@ -238,6 +276,7 @@ class PolyclinicApp:
         print("1. Загрузить из JSON")
         print("2. Загрузить из XML")
         choice = input("Выберите формат: ").strip()
+
         filename = input("Введите имя файла: ").strip()
         if not filename:
             print("Имя файла не может быть пустым")
@@ -340,7 +379,10 @@ class PolyclinicApp:
 
         print("\n--- СПИСОК ПАЦИЕНТОВ ---")
         for i, patient in enumerate(patients, 1):
-            print(f"{i}. {patient} (Тел: {patient.phone}, Страховка: {patient.insurance_number})")
+            medical_record = next((record for record in self.service.medical_records
+                                   if record.patient.patient_id == patient.patient_id), None)
+            record_info = " (есть мед. карта)" if medical_record and medical_record.entries else " (нет записей)"
+            print(f"{i}. {patient} (Тел: {patient.phone}, Страховка: {patient.insurance_number}){record_info}")
 
     def delete_patient(self):
         """Удаляет пациента."""
@@ -544,7 +586,7 @@ class PolyclinicApp:
         floor = self.get_valid_input("Этаж: ", self.validator.validate_floor)
         if not floor: return
 
-        room_type = input("Тип кабинета: ")
+        room_type = input("Тип кабинета : ")
         if not room_type: return
 
         departments = self.service.departments
@@ -893,6 +935,234 @@ class PolyclinicApp:
         except ValueError:
             print("Введите корректный номер!")
 
+    def medical_records_menu(self):
+        """Меню управления медицинскими картами и диагнозами."""
+        if not self.service:
+            print("Сначала создайте поликлинику!")
+            return
+
+        while True:
+            print("\n--- МЕДИЦИНСКИЕ КАРТЫ И ДИАГНОЗЫ ---")
+            print("1. Просмотреть все медицинские карты")
+            print("2. Добавить диагноз")
+            print("3. Просмотреть все диагнозы")
+            print("4. Добавить запись в медицинскую карту")
+            print("5. Просмотреть медицинскую карту пациента")
+            print("6. Назад")
+            choice = input("Выберите действие: ").strip()
+
+            if choice == "1":
+                self.view_all_medical_records()
+            elif choice == "2":
+                self.add_diagnosis()
+            elif choice == "3":
+                self.view_diagnoses()
+            elif choice == "4":
+                self.add_medical_record_entry()
+            elif choice == "5":
+                self.view_patient_medical_record()
+            elif choice == "6":
+                break
+            else:
+                print("Неверный выбор!")
+
+    def view_all_medical_records(self):
+        """Просматривает все медицинские карты."""
+        if not self.service.medical_records:
+            print("Медицинские карты не найдены")
+            return
+
+        print("\n--- ВСЕ МЕДИЦИНСКИЕ КАРТЫ ---")
+        for i, record in enumerate(self.service.medical_records, 1):
+            entries_count = len(record.entries)
+            print(f"{i}. {record} - {entries_count} записей")
+
+    def add_diagnosis(self):
+        """Добавляет новый диагноз."""
+        print("\n--- ДОБАВЛЕНИЕ ДИАГНОЗА ---")
+
+        code = self.get_valid_input("Код диагноза: ", self.validator.validate_diagnosis_code)
+        if not code: return
+
+        name = input("Название диагноза: ").strip()
+        if not name:
+            print("Название диагноза не может быть пустым")
+            return
+
+        description = input("Описание диагноза: ").strip()
+        if not description:
+            print("Описание диагноза не может быть пустым")
+            return
+
+        try:
+            diagnosis = self.service.create_diagnosis(code, name, description)
+            print(f"Диагноз добавлен: {diagnosis}")
+        except Exception as e:
+            print(f"Ошибка при добавлении диагноза: {e}")
+
+    def view_diagnoses(self):
+        """Просматривает все диагнозы."""
+        diagnoses = self.service.diagnoses
+        if not diagnoses:
+            print("Диагнозы не найдены")
+            return
+
+        print("\n--- СПИСОК ДИАГНОЗОВ ---")
+        for i, diagnosis in enumerate(diagnoses, 1):
+            print(f"{i}. {diagnosis}")
+
+    def add_medical_record_entry(self):
+        """Добавляет запись в медицинскую карту."""
+        print("\n--- ДОБАВЛЕНИЕ ЗАПИСИ В МЕДИЦИНСКУЮ КАРТУ ---")
+
+        patients = self.service.get_all_patients()
+        if not patients:
+            print("Нет доступных пациентов!")
+            return
+        print("\nДоступные пациенты:")
+        for i, patient in enumerate(patients, 1):
+            print(f"{i}. {patient}")
+
+        patient_choice = input("Выберите номер пациента: ").strip()
+        if not patient_choice.isdigit():
+            print("Введите номер!")
+            return
+
+        doctors = self.service.get_all_doctors()
+        if not doctors:
+            print("Нет доступных врачей!")
+            return
+        print("\nДоступные врачи:")
+        for i, doctor in enumerate(doctors, 1):
+            print(f"{i}. {doctor}")
+
+        doctor_choice = input("Выберите номер врача: ").strip()
+        if not doctor_choice.isdigit():
+            print("Введите номер!")
+            return
+
+        diagnoses = self.service.diagnoses
+        if not diagnoses:
+            print("Нет доступных диагнозов!")
+            return
+        print("\nДоступные диагнозы:")
+        for i, diagnosis in enumerate(diagnoses, 1):
+            print(f"{i}. {diagnosis}")
+
+        diagnosis_choice = input("Выберите номер диагноза: ").strip()
+        if not diagnosis_choice.isdigit():
+            print("Введите номер!")
+            return
+
+        entry_date = self.get_valid_input("Дата осмотра (ГГГГ-ММ-ДД): ", self.validator.validate_date)
+        if not entry_date: return
+
+        symptoms = self.get_valid_input("Симптомы: ", self.validator.validate_symptoms)
+        if not symptoms: return
+
+        treatment = self.get_valid_input("Лечение: ", self.validator.validate_treatment)
+        if not treatment: return
+
+        print("\n--- ДОБАВЛЕНИЕ НАЗНАЧЕНИЙ ---")
+        prescriptions = []
+        while True:
+            print("\nДобавить назначение?")
+            print("1. Добавить лекарство")
+            print("2. Закончить ввод назначений")
+            choice = input("Выберите действие: ").strip()
+
+            if choice == "1":
+                medication = self.get_valid_input("Название лекарства: ", self.validator.validate_medication)
+                if not medication: continue
+
+                dosage = self.get_valid_input("Дозировка: ", self.validator.validate_dosage)
+                if not dosage: continue
+
+                frequency = input("Частота приема: ").strip()
+                if not frequency:
+                    print("Частота приема не может быть пустой")
+                    continue
+
+                duration = input("Длительность приема: ").strip()
+                if not duration:
+                    print("Длительность приема не может быть пустой")
+                    continue
+
+                try:
+                    prescription = self.service.create_prescription(medication, dosage, frequency, duration)
+                    prescriptions.append(prescription)
+                    print(f"Назначение добавлено: {prescription}")
+                except Exception as e:
+                    print(f"Ошибка при добавлении назначения: {e}")
+
+            elif choice == "2":
+                break
+            else:
+                print("Неверный выбор!")
+
+        try:
+            patient_choice = int(patient_choice) - 1
+            doctor_choice = int(doctor_choice) - 1
+            diagnosis_choice = int(diagnosis_choice) - 1
+
+            if (0 <= patient_choice < len(patients) and
+                    0 <= doctor_choice < len(doctors) and
+                    0 <= diagnosis_choice < len(diagnoses)):
+
+                patient = patients[patient_choice]
+                doctor = doctors[doctor_choice]
+                diagnosis = diagnoses[diagnosis_choice]
+
+                medical_record = next((record for record in self.service.medical_records
+                                       if record.patient.patient_id == patient.patient_id), None)
+
+                if medical_record:
+                    medical_record.add_entry(entry_date, doctor, diagnosis, symptoms, treatment, prescriptions)
+                    print(f"Запись добавлена в медицинскую карту пациента {patient}")
+                else:
+                    print("Медицинская карта для пациента не найдена")
+            else:
+                print("Неверный выбор!")
+        except Exception as e:
+            print(f"Ошибка при добавлении записи: {e}")
+
+    def view_patient_medical_record(self):
+        """Просматривает медицинскую карту пациента."""
+        patients = self.service.get_all_patients()
+        if not patients:
+            print("Нет доступных пациентов!")
+            return
+
+        print("\n--- ПРОСМОТР МЕДИЦИНСКОЙ КАРТЫ ---")
+        self.view_patients()
+
+        try:
+            patient_choice = int(input("Выберите номер пациента: ").strip()) - 1
+            if 0 <= patient_choice < len(patients):
+                patient = patients[patient_choice]
+                medical_record = next((record for record in self.service.medical_records
+                                       if record.patient.patient_id == patient.patient_id), None)
+
+                if medical_record and medical_record.entries:
+                    print(f"\n--- МЕДИЦИНСКАЯ КАРТА: {patient} ---")
+                    for i, entry in enumerate(medical_record.entries, 1):
+                        print(f"\nЗапись #{i}:")
+                        print(f"  Дата: {entry['entry_date']}")
+                        print(f"  Врач: {entry['doctor'].get_full_name()}")
+                        print(f"  Диагноз: {entry['diagnosis']}")
+                        print(f"  Симптомы: {entry['symptoms']}")
+                        print(f"  Лечение: {entry['treatment']}")
+                        if entry['prescriptions']:
+                            print("  Назначения:")
+                            for j, prescription in enumerate(entry['prescriptions'], 1):
+                                print(f"    {j}. {prescription}")
+                else:
+                    print(f"Медицинская карта пациента {patient} пуста или не найдена")
+            else:
+                print("Неверный выбор пациента!")
+        except ValueError:
+            print("Введите корректный номер!")
+
     def view_all_data(self):
         """Просматривает все данные поликлиники."""
         if not self.service:
@@ -912,6 +1182,8 @@ class PolyclinicApp:
         self.view_rooms()
         self.view_services()
         self.view_appointments()
+        self.view_diagnoses()
+        self.view_all_medical_records()
 
     def run(self):
         """Запускает главный цикл приложения."""
@@ -938,6 +1210,8 @@ class PolyclinicApp:
             elif choice == "8":
                 self.appointments_menu()
             elif choice == "9":
+                self.medical_records_menu()
+            elif choice == "10":
                 self.view_all_data()
             elif choice == "0":
                 print("До свидания!")
