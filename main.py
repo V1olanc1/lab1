@@ -53,12 +53,15 @@ class Validator:
 
     @staticmethod
     def validate_insurance_number(number: str) -> bool:
-        """Проверяет номер страховки."""
-        if not number or len(number.strip()) < 3:
-            print("Номер страховки должен содержать минимум 3 символа")
+        """Проверяет номер страховки - только 16 цифр."""
+        if not number:
+            print("❌ Номер страховки не может быть пустым")
             return False
-        if not re.match(r'^[a-zA-Zа-яА-ЯёЁ0-9\-]+$', number):
-            print("Номер страховки может содержать только буквы, цифры и дефисы")
+        if len(number) != 16:
+            print("❌ Номер страховки должен содержать ровно 16 цифр")
+            return False
+        if not number.isdigit():
+            print("❌ Номер страховки должен содержать только цифры")
             return False
         return True
 
@@ -224,9 +227,9 @@ class PolyclinicApp:
     def create_new_polyclinic(self):
         """Создает новую поликлинику."""
         print("\n--- СОЗДАНИЕ НОВОЙ ПОЛИКЛИНИКИ ---")
-        name = self.get_valid_input("Введите название поликлиники: ",
-                                    self.validator.validate_name, "Название поликлиники")
+        name = input("Введите название поликлиники: ").strip()
         if not name:
+            print("Название поликлиники не может быть пустым")
             return
 
         address = input("Введите адрес поликлиники: ").strip()
@@ -238,16 +241,10 @@ class PolyclinicApp:
         print(f"Создана поликлиника: {name}")
 
     def load_data_menu(self):
-        """Меню загрузки данных."""
-        if not self.service:
-            print("Сначала создайте поликлинику!")
-            return
-
         print("\n--- ЗАГРУЗКА ДАННЫХ ---")
         print("1. Загрузить из JSON")
         print("2. Загрузить из XML")
         choice = input("Выберите формат: ").strip()
-
         filename = input("Введите имя файла: ").strip()
         if not filename:
             print("Имя файла не может быть пустым")
