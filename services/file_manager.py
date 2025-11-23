@@ -59,6 +59,19 @@ class PolyclinicFileManager:
                         "cost": s.cost,
                         "duration": s.duration
                     } for s in service.services
+                ],
+                "appointments": [
+                    {
+                        "appointment_id": a.appointment_id,
+                        "patient_id": a.patient.patient_id,
+                        "doctor_id": a.doctor.doctor_id,
+                        "room_id": a.room.room_id,
+                        "appointment_date": a.appointment_date,
+                        "appointment_time": a.appointment_time,
+                        "service_id": a.service.service_id,
+                        "reason": a.reason,
+                        "status": a.status
+                    } for a in service.appointments
                 ]
             }
 
@@ -128,13 +141,42 @@ class PolyclinicFileManager:
                         service_data["duration"]
                     )
 
-            print(f"Данные успешно загружены из {filename}")
+            # Загрузка записей на прием
+            if "appointments" in data:
+                for appointment_data in data["appointments"]:
+                    try:
+                        # Получаем объекты по ID
+                        patient = service.get_patient(appointment_data["patient_id"])
+                        doctor = service.get_doctor(appointment_data["doctor_id"])
+                        room = service.get_room(appointment_data["room_id"])
+                        medical_service = service.get_service(appointment_data["service_id"])
+
+                        if all([patient, doctor, room, medical_service]):
+                            # Создаем запись на прием
+                            appointment = service.create_appointment(
+                                patient.patient_id,
+                                doctor.doctor_id,
+                                room.room_id,
+                                appointment_data["appointment_date"],
+                                appointment_data["appointment_time"],
+                                medical_service.service_id,
+                                appointment_data.get("reason", "")
+                            )
+
+                            # Устанавливаем статус записи
+                            if appointment and "status" in appointment_data:
+                                appointment.status = appointment_data["status"]
+                    except Exception as e:
+                        print(f"Ошибка при загрузке записи на прием: {e}")
+                        continue
+
             print(f"Данные успешно загружены из {filename}")
             print(f"Загружено: {len(service.patients)} пациентов, "
                   f"{len(service.doctors)} врачей, "
                   f"{len(service.departments)} отделений, "
                   f"{len(service.rooms)} кабинетов, "
-                  f"{len(service.services)} услуг")
+                  f"{len(service.services)} услуг, "
+                  f"{len(service.appointments)} записей на прием")
             return service
 
         except Exception as e:
@@ -200,6 +242,20 @@ class PolyclinicFileManager:
                 ET.SubElement(service_elem, "cost").text = str(service_obj.cost)
                 ET.SubElement(service_elem, "duration").text = str(service_obj.duration)
 
+            # Сохранение записей на прием
+            appointments_elem = ET.SubElement(root, "appointments")
+            for appointment in service.appointments:
+                appointment_elem = ET.SubElement(appointments_elem, "appointment")
+                ET.SubElement(appointment_elem, "id").text = str(appointment.appointment_id)
+                ET.SubElement(appointment_elem, "patient_id").text = str(appointment.patient.patient_id)
+                ET.SubElement(appointment_elem, "doctor_id").text = str(appointment.doctor.doctor_id)
+                ET.SubElement(appointment_elem, "room_id").text = str(appointment.room.room_id)
+                ET.SubElement(appointment_elem, "appointment_date").text = appointment.appointment_date
+                ET.SubElement(appointment_elem, "appointment_time").text = appointment.appointment_time
+                ET.SubElement(appointment_elem, "service_id").text = str(appointment.service.service_id)
+                ET.SubElement(appointment_elem, "reason").text = appointment.reason
+                ET.SubElement(appointment_elem, "status").text = appointment.status
+
             tree = ET.ElementTree(root)
             tree.write(filename, encoding='utf-8', xml_declaration=True)
             print(f"Данные успешно сохранены в {filename}")
@@ -213,6 +269,8 @@ class PolyclinicFileManager:
         try:
             tree = ET.parse(filename)
             root = tree.getroot()
+
+            # Основная информация
             name = root.find("name").text
             address = root.find("address").text
             service = PolyclinicService(name, address)
@@ -241,7 +299,6 @@ class PolyclinicFileManager:
             if doctors_elem is not None:
                 for doctor_elem in doctors_elem.findall("doctor"):
                     try:
-                        # Получаем все элементы
                         first_name_elem = doctor_elem.find("first_name")
                         last_name_elem = doctor_elem.find("last_name")
                         birth_date_elem = doctor_elem.find("birth_date")
@@ -251,8 +308,8 @@ class PolyclinicFileManager:
 
                         # Проверяем, что все необходимые поля существуют и не None
                         if (first_name_elem is not None and last_name_elem is not None and
-                            birth_date_elem is not None and phone_elem is not None and
-                            specialization_elem is not None and license_number_elem is not None):
+                                birth_date_elem is not None and phone_elem is not None and
+                                specialization_elem is not None and license_number_elem is not None):
 
                             first_name = first_name_elem.text
                             last_name = last_name_elem.text
@@ -329,12 +386,54 @@ class PolyclinicFileManager:
                         print(f"Ошибка при загрузке услуги: {e}")
                         continue
 
+            # Загрузка записей на прием
+            appointments_elem = root.find("appointments")
+            if appointments_elem is not None:
+                for appointment_elem in appointments_elem.findall("appointment"):
+                    try:
+                        patient_id = int(appointment_elem.find("patient_id").text)
+                        doctor_id = int(appointment_elem.find("doctor_id").text)
+                        room_id = int(appointment_elem.find("room_id").text)
+                        appointment_date = appointment_elem.find("appointment_date").text
+                        appointment_time = appointment_elem.find("appointment_time").text
+                        service_id = int(appointment_elem.find("service_id").text)
+                        reason = appointment_elem.find("reason").text
+                        status = appointment_elem.find("status").text
+
+                        # Получаем объекты по ID
+                        patient = service.get_patient(patient_id)
+                        doctor = service.get_doctor(doctor_id)
+                        room = service.get_room(room_id)
+                        medical_service = service.get_service(service_id)
+
+                        if all([patient, doctor, room, medical_service]):
+                            # Создаем запись на прием
+                            appointment = service.create_appointment(
+                                patient_id,
+                                doctor_id,
+                                room_id,
+                                appointment_date,
+                                appointment_time,
+                                service_id,
+                                reason
+                            )
+
+                            # Устанавливаем статус записи
+                            if appointment and status:
+                                appointment.status = status
+                        else:
+                            print(f"Не удалось создать запись на прием: не найдены связанные объекты")
+                    except Exception as e:
+                        print(f"Ошибка при загрузке записи на прием: {e}")
+                        continue
+
             print(f"Данные успешно загружены из {filename}")
             print(f"Загружено: {len(service.patients)} пациентов, "
                   f"{len(service.doctors)} врачей, "
                   f"{len(service.departments)} отделений, "
                   f"{len(service.rooms)} кабинетов, "
-                  f"{len(service.services)} услуг")
+                  f"{len(service.services)} услуг, "
+                  f"{len(service.appointments)} записей на прием")
 
             return service
 
