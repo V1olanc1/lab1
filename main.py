@@ -1,5 +1,186 @@
+import re
+from datetime import datetime
 from services.polyclinic_service import PolyclinicService
 from services.file_manager import PolyclinicFileManager
+
+
+class Validator:
+    """Класс для валидации вводимых данных."""
+
+    @staticmethod
+    def validate_name(name: str, field_name: str) -> bool:
+        """Проверяет имя/фамилию/название."""
+        if not name or len(name.strip()) < 2:
+            print(f"{field_name} должно содержать минимум 2 символа")
+            return False
+        if not re.match(r'^[a-zA-Zа-яА-ЯёЁ\s\-]+$', name):
+            print(f"{field_name} может содержать только буквы, пробелы и дефисы")
+            return False
+        return True
+
+    @staticmethod
+    def validate_phone(phone: str) -> bool:
+        """Проверяет номер телефона."""
+        # Убираем все нецифровые символы кроме +
+        cleaned_phone = re.sub(r'[^\d+]', '', phone)
+
+        # Проверяем российские форматы: +7..., 8..., 7...
+        if (cleaned_phone.startswith('+7') and len(cleaned_phone) == 12) or \
+                (cleaned_phone.startswith('8') and len(cleaned_phone) == 11) or \
+                (cleaned_phone.startswith('7') and len(cleaned_phone) == 11):
+            return True
+
+        print("Неверный формат телефона. Используйте: +7XXX..., 8XXX... или 7XXX... (10 цифр после кода)")
+        return False
+
+    @staticmethod
+    def validate_date(date_str: str) -> bool:
+        """Проверяет дату в формате ГГГГ-ММ-ДД."""
+        try:
+            date = datetime.strptime(date_str, '%Y-%m-%d')
+            # Проверяем, что дата не в будущем (для даты рождения)
+            if date > datetime.now():
+                print("Дата не может быть в будущем")
+                return False
+            # Проверяем разумный возраст (не старше 150 лет)
+            if (datetime.now() - date).days > 150 * 365:
+                print("Неверная дата рождения")
+                return False
+            return True
+        except ValueError:
+            print("Неверный формат даты. Используйте: ГГГГ-ММ-ДД")
+            return False
+
+    @staticmethod
+    def validate_insurance_number(number: str) -> bool:
+        """Проверяет номер страховки."""
+        if not number or len(number.strip()) < 3:
+            print("Номер страховки должен содержать минимум 3 символа")
+            return False
+        if not re.match(r'^[a-zA-Zа-яА-ЯёЁ0-9\-]+$', number):
+            print("Номер страховки может содержать только буквы, цифры и дефисы")
+            return False
+        return True
+
+    @staticmethod
+    def validate_license_number(number: str) -> bool:
+        """Проверяет номер лицензии врача."""
+        if not number or len(number.strip()) < 5:
+            print("Номер лицензии должен содержать минимум 5 символов")
+            return False
+        if not re.match(r'^[a-zA-Zа-яА-ЯёЁ0-9\-]+$', number):
+            print("Номер лицензии может содержать только буквы, цифры и дефисы")
+            return False
+        return True
+
+    @staticmethod
+    def validate_specialization(spec: str) -> bool:
+        """Проверяет специализацию врача."""
+        if not spec or len(spec.strip()) < 3:
+            print("Специализация должна содержать минимум 3 символа")
+            return False
+        if not re.match(r'^[a-zA-Zа-яА-ЯёЁ\s\-]+$', spec):
+            print("Специализация может содержать только буквы, пробелы и дефисы")
+            return False
+        return True
+
+    @staticmethod
+    def validate_floor(floor: str) -> bool:
+        """Проверяет номер этажа."""
+        try:
+            floor_num = int(floor)
+            if 1 <= floor_num <= 50:  # Разумные пределы для этажей
+                return True
+            else:
+                print("Этаж должен быть от 1 до 50")
+                return False
+        except ValueError:
+            print("Этаж должен быть числом")
+            return False
+
+    @staticmethod
+    def validate_room_number(number: str) -> bool:
+        """Проверяет номер кабинета."""
+        if not number or len(number.strip()) < 1:
+            print("Номер кабинета не может быть пустым")
+            return False
+        if not re.match(r'^[a-zA-Zа-яА-ЯёЁ0-9\-\s]+$', number):
+            print("Номер кабинета может содержать только буквы, цифры, пробелы и дефисы")
+            return False
+        return True
+
+    @staticmethod
+    def validate_room_type(room_type: str) -> bool:
+        """Проверяет тип кабинета."""
+        valid_types = ['examination', 'procedure', 'surgery', 'consultation', 'other']
+        if room_type.lower() not in valid_types:
+            print(f"Неверный тип кабинета. Допустимые: {', '.join(valid_types)}")
+            return False
+        return True
+
+    @staticmethod
+    def validate_cost(cost: str) -> bool:
+        """Проверяет стоимость."""
+        try:
+            cost_num = float(cost)
+            if cost_num >= 0:
+                return True
+            else:
+                print("Стоимость не может быть отрицательной")
+                return False
+        except ValueError:
+            print("Стоимость должна быть числом")
+            return False
+
+    @staticmethod
+    def validate_duration(duration: str) -> bool:
+        """Проверяет длительность в минутах."""
+        try:
+            duration_num = int(duration)
+            if 1 <= duration_num <= 480:  # От 1 минуты до 8 часов
+                return True
+            else:
+                print("Длительность должна быть от 1 до 480 минут")
+                return False
+        except ValueError:
+            print("Длительность должна быть целым числом")
+            return False
+
+    @staticmethod
+    def validate_appointment_date(date_str: str) -> bool:
+        """Проверяет дату приема."""
+        try:
+            date = datetime.strptime(date_str, '%Y-%m-%d')
+            if date < datetime.now().replace(hour=0, minute=0, second=0, microsecond=0):
+                print("Дата приема не может быть в прошлом")
+                return False
+            return True
+        except ValueError:
+            print("Неверный формат даты. Используйте: ГГГГ-ММ-ДД")
+            return False
+
+    @staticmethod
+    def validate_appointment_time(time_str: str) -> bool:
+        """Проверяет время приема."""
+        try:
+            time = datetime.strptime(time_str, '%H:%M')
+            hour = time.hour
+            if 8 <= hour <= 20:  # Рабочее время с 8:00 до 20:00
+                return True
+            else:
+                print("Время приема должно быть с 8:00 до 20:00")
+                return False
+        except ValueError:
+            print("Неверный формат времени. Используйте: ЧЧ:ММ")
+            return False
+
+    @staticmethod
+    def validate_reason(reason: str) -> bool:
+        """Проверяет причину визита."""
+        if not reason or len(reason.strip()) < 5:
+            print("Причина визита должна содержать минимум 5 символов")
+            return False
+        return True
 
 
 class PolyclinicApp:
@@ -8,6 +189,20 @@ class PolyclinicApp:
     def __init__(self):
         self.service = None
         self.file_manager = PolyclinicFileManager()
+        self.validator = Validator()
+
+    def get_valid_input(self, prompt: str, validation_func, field_name: str = "", max_attempts: int = 3):
+        """Получает валидный ввод от пользователя."""
+        attempts = 0
+        while attempts < max_attempts:
+            value = input(prompt).strip()
+            if validation_func(value, field_name) if field_name else validation_func(value):
+                return value
+            attempts += 1
+            print(f"Попытка {attempts}/{max_attempts}")
+
+        print("Превышено максимальное количество попыток. Возврат в меню.")
+        return None
 
     def display_main_menu(self):
         """Отображает главное меню."""
@@ -29,19 +224,35 @@ class PolyclinicApp:
     def create_new_polyclinic(self):
         """Создает новую поликлинику."""
         print("\n--- СОЗДАНИЕ НОВОЙ ПОЛИКЛИНИКИ ---")
-        name = input("Введите название поликлиники: ")
-        address = input("Введите адрес поликлиники: ")
+        name = self.get_valid_input("Введите название поликлиники: ",
+                                    self.validator.validate_name, "Название поликлиники")
+        if not name:
+            return
+
+        address = input("Введите адрес поликлиники: ").strip()
+        if not address:
+            print("Адрес не может быть пустым")
+            return
+
         self.service = PolyclinicService(name, address)
         print(f"Создана поликлиника: {name}")
 
     def load_data_menu(self):
         """Меню загрузки данных."""
+        if not self.service:
+            print("Сначала создайте поликлинику!")
+            return
+
         print("\n--- ЗАГРУЗКА ДАННЫХ ---")
         print("1. Загрузить из JSON")
         print("2. Загрузить из XML")
-        choice = input("Выберите формат: ")
+        choice = input("Выберите формат: ").strip()
 
-        filename = input("Введите имя файла: ")
+        filename = input("Введите имя файла: ").strip()
+        if not filename:
+            print("Имя файла не может быть пустым")
+            return
+
         try:
             if choice == "1":
                 self.service = self.file_manager.load_from_json(filename)
@@ -61,9 +272,13 @@ class PolyclinicApp:
         print("\n--- СОХРАНЕНИЕ ДАННЫХ ---")
         print("1. Сохранить в JSON")
         print("2. Сохранить в XML")
-        choice = input("Выберите формат: ")
+        choice = input("Выберите формат: ").strip()
 
-        filename = input("Введите имя файла: ")
+        filename = input("Введите имя файла: ").strip()
+        if not filename:
+            print("Имя файла не может быть пустым")
+            return
+
         try:
             if choice == "1":
                 self.file_manager.save_to_json(self.service, filename)
@@ -85,7 +300,7 @@ class PolyclinicApp:
             print("1. Добавить пациента")
             print("2. Просмотреть всех пациентов")
             print("3. Назад")
-            choice = input("Выберите действие: ")
+            choice = input("Выберите действие: ").strip()
 
             if choice == "1":
                 self.add_patient()
@@ -99,11 +314,21 @@ class PolyclinicApp:
     def add_patient(self):
         """Добавляет нового пациента."""
         print("\n--- ДОБАВЛЕНИЕ ПАЦИЕНТА ---")
-        first_name = input("Имя: ")
-        last_name = input("Фамилия: ")
-        birth_date = input("Дата рождения (ГГГГ-ММ-ДД): ")
-        phone = input("Телефон: ")
-        insurance_number = input("Номер страховки: ")
+
+        first_name = self.get_valid_input("Имя: ", self.validator.validate_name, "Имя")
+        if not first_name: return
+
+        last_name = self.get_valid_input("Фамилия: ", self.validator.validate_name, "Фамилия")
+        if not last_name: return
+
+        birth_date = self.get_valid_input("Дата рождения (ГГГГ-ММ-ДД): ", self.validator.validate_date)
+        if not birth_date: return
+
+        phone = self.get_valid_input("Телефон: ", self.validator.validate_phone)
+        if not phone: return
+
+        insurance_number = self.get_valid_input("Номер страховки: ", self.validator.validate_insurance_number)
+        if not insurance_number: return
 
         try:
             patient = self.service.create_patient(
@@ -111,7 +336,7 @@ class PolyclinicApp:
             )
             print(f"Пациент добавлен: {patient}")
         except Exception as e:
-            print(f"шибка при добавлении пациента: {e}")
+            print(f"Ошибка при добавлении пациента: {e}")
 
     def view_patients(self):
         """Просматривает всех пациентов."""
@@ -135,7 +360,7 @@ class PolyclinicApp:
             print("1. Добавить врача")
             print("2. Просмотреть всех врачей")
             print("3. Назад")
-            choice = input("Выберите действие: ")
+            choice = input("Выберите действие: ").strip()
 
             if choice == "1":
                 self.add_doctor()
@@ -149,12 +374,24 @@ class PolyclinicApp:
     def add_doctor(self):
         """Добавляет нового врача."""
         print("\n--- ДОБАВЛЕНИЕ ВРАЧА ---")
-        first_name = input("Имя: ")
-        last_name = input("Фамилия: ")
-        birth_date = input("Дата рождения (ГГГГ-ММ-ДД): ")
-        phone = input("Телефон: ")
-        specialization = input("Специализация: ")
-        license_number = input("Номер лицензии: ")
+
+        first_name = self.get_valid_input("Имя: ", self.validator.validate_name, "Имя")
+        if not first_name: return
+
+        last_name = self.get_valid_input("Фамилия: ", self.validator.validate_name, "Фамилия")
+        if not last_name: return
+
+        birth_date = self.get_valid_input("Дата рождения (ГГГГ-ММ-ДД): ", self.validator.validate_date)
+        if not birth_date: return
+
+        phone = self.get_valid_input("Телефон: ", self.validator.validate_phone)
+        if not phone: return
+
+        specialization = self.get_valid_input("Специализация: ", self.validator.validate_specialization)
+        if not specialization: return
+
+        license_number = self.get_valid_input("Номер лицензии: ", self.validator.validate_license_number)
+        if not license_number: return
 
         try:
             doctor = self.service.create_doctor(
@@ -188,7 +425,7 @@ class PolyclinicApp:
             print("3. Просмотреть отделения")
             print("4. Просмотреть кабинеты")
             print("5. Назад")
-            choice = input("Выберите действие: ")
+            choice = input("Выберите действие: ").strip()
 
             if choice == "1":
                 self.add_department()
@@ -206,8 +443,12 @@ class PolyclinicApp:
     def add_department(self):
         """Добавляет новое отделение."""
         print("\n--- ДОБАВЛЕНИЕ ОТДЕЛЕНИЯ ---")
-        name = input("Название отделения: ")
-        floor = int(input("Этаж: "))
+
+        name = self.get_valid_input("Название отделения: ", self.validator.validate_name, "Название отделения")
+        if not name: return
+
+        floor = self.get_valid_input("Этаж: ", self.validator.validate_floor)
+        if not floor: return
 
         # Показываем список врачей для выбора заведующего
         doctors = self.service.get_all_doctors()
@@ -220,10 +461,15 @@ class PolyclinicApp:
             print(f"{i}. {doctor}")
 
         try:
-            doctor_choice = int(input("Выберите номер врача (заведующего): ")) - 1
+            doctor_choice = input("Выберите номер врача (заведующего): ").strip()
+            if not doctor_choice.isdigit():
+                print("Введите номер!")
+                return
+
+            doctor_choice = int(doctor_choice) - 1
             if 0 <= doctor_choice < len(doctors):
                 head_doctor_id = doctors[doctor_choice].doctor_id
-                department = self.service.create_department(name, floor, head_doctor_id)
+                department = self.service.create_department(name, int(floor), head_doctor_id)
                 if department:
                     print(f"Отделение добавлено: {department}")
                 else:
@@ -236,9 +482,16 @@ class PolyclinicApp:
     def add_room(self):
         """Добавляет новый кабинет."""
         print("\n--- ДОБАВЛЕНИЕ КАБИНЕТА ---")
-        room_number = input("Номер кабинета: ")
-        floor = int(input("Этаж: "))
-        room_type = input("Тип кабинета: ")
+
+        room_number = self.get_valid_input("Номер кабинета: ", self.validator.validate_room_number)
+        if not room_number: return
+
+        floor = self.get_valid_input("Этаж: ", self.validator.validate_floor)
+        if not floor: return
+
+        room_type = self.get_valid_input("Тип кабинета (examination/procedure/surgery/consultation/other): ",
+                                         self.validator.validate_room_type)
+        if not room_type: return
 
         # Показываем список отделений
         departments = self.service.departments
@@ -251,10 +504,15 @@ class PolyclinicApp:
             print(f"{i}. {department}")
 
         try:
-            dept_choice = int(input("Выберите номер отделения: ")) - 1
+            dept_choice = input("Выберите номер отделения: ").strip()
+            if not dept_choice.isdigit():
+                print("Введите номер!")
+                return
+
+            dept_choice = int(dept_choice) - 1
             if 0 <= dept_choice < len(departments):
                 department_id = departments[dept_choice].department_id
-                room = self.service.create_room(room_number, floor, room_type, department_id)
+                room = self.service.create_room(room_number, int(floor), room_type, department_id)
                 if room:
                     print(f"Кабинет добавлен: {room}")
                 else:
@@ -268,7 +526,7 @@ class PolyclinicApp:
         """Просматривает все отделения."""
         departments = self.service.departments
         if not departments:
-            print("📝 Отделения не найдены")
+            print("Отделения не найдены")
             return
 
         print("\n--- СПИСОК ОТДЕЛЕНИЙ ---")
@@ -279,7 +537,7 @@ class PolyclinicApp:
         """Просматривает все кабинеты."""
         rooms = self.service.rooms
         if not rooms:
-            print("📝 Кабинеты не найдены")
+            print("Кабинеты не найдены")
             return
 
         print("\n--- СПИСОК КАБИНЕТОВ ---")
@@ -297,7 +555,7 @@ class PolyclinicApp:
             print("1. Добавить услугу")
             print("2. Просмотреть все услуги")
             print("3. Назад")
-            choice = input("Выберите действие: ")
+            choice = input("Выберите действие: ").strip()
 
             if choice == "1":
                 self.add_service()
@@ -311,13 +569,25 @@ class PolyclinicApp:
     def add_service(self):
         """Добавляет новую услугу."""
         print("\n--- ДОБАВЛЕНИЕ УСЛУГИ ---")
-        name = input("Название услуги: ")
-        description = input("Описание: ")
-        cost = float(input("Стоимость: "))
-        duration = int(input("Длительность (мин): "))
+
+        name = input("Название услуги: ").strip()
+        if not name:
+            print("Название услуги не может быть пустым")
+            return
+
+        description = input("Описание: ").strip()
+        if not description:
+            print("Описание не может быть пустым")
+            return
+
+        cost = self.get_valid_input("Стоимость: ", self.validator.validate_cost)
+        if not cost: return
+
+        duration = self.get_valid_input("Длительность (мин): ", self.validator.validate_duration)
+        if not duration: return
 
         try:
-            service = self.service.create_service(name, description, cost, duration)
+            service = self.service.create_service(name, description, float(cost), int(duration))
             print(f"Услуга добавлена: {service}")
         except Exception as e:
             print(f"Ошибка при добавлении услуги: {e}")
@@ -344,7 +614,7 @@ class PolyclinicApp:
             print("1. Создать запись")
             print("2. Просмотреть все записи")
             print("3. Назад")
-            choice = input("Выберите действие: ")
+            choice = input("Выберите действие: ").strip()
 
             if choice == "1":
                 self.create_appointment()
@@ -367,7 +637,11 @@ class PolyclinicApp:
         print("\nДоступные пациенты:")
         for i, patient in enumerate(patients, 1):
             print(f"{i}. {patient}")
-        patient_choice = int(input("Выберите номер пациента: ")) - 1
+
+        patient_choice = input("Выберите номер пациента: ").strip()
+        if not patient_choice.isdigit():
+            print("Введите номер!")
+            return
 
         # Выбор врача
         doctors = self.service.get_all_doctors()
@@ -377,7 +651,11 @@ class PolyclinicApp:
         print("\nДоступные врачи:")
         for i, doctor in enumerate(doctors, 1):
             print(f"{i}. {doctor}")
-        doctor_choice = int(input("Выберите номер врача: ")) - 1
+
+        doctor_choice = input("Выберите номер врача: ").strip()
+        if not doctor_choice.isdigit():
+            print("Введите номер!")
+            return
 
         # Выбор кабинета
         rooms = self.service.rooms
@@ -387,7 +665,11 @@ class PolyclinicApp:
         print("\nДоступные кабинеты:")
         for i, room in enumerate(rooms, 1):
             print(f"{i}. {room}")
-        room_choice = int(input("Выберите номер кабинета: ")) - 1
+
+        room_choice = input("Выберите номер кабинета: ").strip()
+        if not room_choice.isdigit():
+            print("Введите номер!")
+            return
 
         # Выбор услуги
         services = self.service.services
@@ -397,14 +679,28 @@ class PolyclinicApp:
         print("\nДоступные услуги:")
         for i, service in enumerate(services, 1):
             print(f"{i}. {service}")
-        service_choice = int(input("Выберите номер услуги: ")) - 1
+
+        service_choice = input("Выберите номер услуги: ").strip()
+        if not service_choice.isdigit():
+            print("Введите номер!")
+            return
 
         # Дополнительная информация
-        date = input("Дата приема (ГГГГ-ММ-ДД): ")
-        time = input("Время приема (ЧЧ:ММ): ")
-        reason = input("Причина визита: ")
+        date = self.get_valid_input("Дата приема (ГГГГ-ММ-ДД): ", self.validator.validate_appointment_date)
+        if not date: return
+
+        time = self.get_valid_input("Время приема (ЧЧ:ММ): ", self.validator.validate_appointment_time)
+        if not time: return
+
+        reason = self.get_valid_input("Причина визита: ", self.validator.validate_reason)
+        if not reason: return
 
         try:
+            patient_choice = int(patient_choice) - 1
+            doctor_choice = int(doctor_choice) - 1
+            room_choice = int(room_choice) - 1
+            service_choice = int(service_choice) - 1
+
             if (0 <= patient_choice < len(patients) and
                     0 <= doctor_choice < len(doctors) and
                     0 <= room_choice < len(rooms) and
@@ -445,8 +741,8 @@ class PolyclinicApp:
         print("ВСЕ ДАННЫЕ ПОЛИКЛИНИКИ")
         print("=" * 50)
 
-        print(f"\n Поликлиника: {self.service.name}")
-        print(f" Адрес: {self.service.address}")
+        print(f"\nПоликлиника: {self.service.name}")
+        print(f"Адрес: {self.service.address}")
 
         self.view_patients()
         self.view_doctors()
@@ -457,11 +753,11 @@ class PolyclinicApp:
 
     def run(self):
         """Запускает главный цикл приложения."""
-        print("Запуск системы управления поликлиникой")
+        print("🚀 Запуск системы управления поликлиникой")
 
         while True:
             self.display_main_menu()
-            choice = input("Выберите действие: ")
+            choice = input("Выберите действие: ").strip()
 
             if choice == "1":
                 self.create_new_polyclinic()
@@ -482,7 +778,7 @@ class PolyclinicApp:
             elif choice == "9":
                 self.view_all_data()
             elif choice == "0":
-                print("👋 До свидания!")
+                print("До свидания!")
                 break
             else:
                 print("Неверный выбор! Попробуйте снова.")
