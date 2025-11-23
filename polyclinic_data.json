@@ -1,0 +1,68 @@
+{
+  "name": "Городская поликлиника №1",
+  "address": "ул. Ленина, 10",
+  "patients": [
+    {
+      "patient_id": 1,
+      "first_name": "Иван",
+      "last_name": "Иванов",
+      "birth_date": "1990-01-01",
+      "phone": "+79161112233",
+      "insurance_number": "INS001"
+    },
+    {
+      "patient_id": 2,
+      "first_name": "Мария",
+      "last_name": "Петрова",
+      "birth_date": "1985-05-15",
+      "phone": "+79162223344",
+      "insurance_number": "INS002"
+    }
+  ],
+  "doctors": [
+    {
+      "doctor_id": 1,
+      "first_name": "Алексей",
+      "last_name": "Смирнов",
+      "birth_date": "1975-03-15",
+      "phone": "+79163334455",
+      "specialization": "Терапевт",
+      "license_number": "MED123456"
+    },
+    {
+      "doctor_id": 2,
+      "first_name": "Елена",
+      "last_name": "Козлова",
+      "birth_date": "1980-07-22",
+      "phone": "+79164445566",
+      "specialization": "Хирург",
+      "license_number": "MED654321"
+    }
+  ],
+  "departments": [
+    {
+      "department_id": 1,
+      "name": "Терапевтическое",
+      "floor": 1,
+      "head_doctor_id": 1
+    }
+  ],
+  "rooms": [
+    {
+      "room_id": 1,
+      "room_number": "101",
+      "floor": 1,
+      "room_type": "examination",
+      "department_id": 1
+    }
+  ],
+  "services": [
+    {
+      "service_id": 1,
+      "name": "Консультация терапевта",
+      "description": "Первичный осмотр терапевта",
+      "cost": 1500.0,
+      "duration": 30
+    }
+  ]
+}
