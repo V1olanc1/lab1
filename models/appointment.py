@@ -6,9 +6,17 @@ from .medical import MedicalService
 class Appointment:
     """Класс записи на прием."""
 
-    def __init__(self, appointment_id: int, patient: Patient, doctor: Doctor,
-                 room: Room, appointment_date: str, appointment_time: str,
-                 service: MedicalService, reason: str = "") -> None:
+    def __init__(
+        self,
+        appointment_id: int,
+        patient: Patient,
+        doctor: Doctor,
+        room: Room,
+        appointment_date: str,
+        appointment_time: str,
+        service: MedicalService,
+        reason: str = "",
+    ) -> None:
         self.appointment_id = appointment_id
         self.patient = patient
         self.doctor = doctor
@@ -28,6 +36,8 @@ class Appointment:
         self.status = "отмене"
 
     def __str__(self) -> str:
-        return (f"Прием #{self.appointment_id}: {self.patient.get_full_name()} "
-                f"-> {self.doctor.get_full_name()} ({self.appointment_date} "
-                f"{self.appointment_time}) - {status_text[self.status]}")
+        return (
+            f"Прием #{self.appointment_id}: {self.patient.get_full_name()} "
+            f"-> {self.doctor.get_full_name()} ({self.appointment_date} "
+            f"{self.appointment_time}) - {status_text[self.status]}"
+        )

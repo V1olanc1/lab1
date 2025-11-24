@@ -1,8 +1,18 @@
 from typing import List, Optional
 from models import (
-    Patient, Doctor, Department, Room, MedicalService,
-    Diagnosis, Appointment, MedicalRecord, NotFoundError, ValidationError, Prescription
+    Patient,
+    Doctor,
+    Department,
+    Room,
+    MedicalService,
+    Diagnosis,
+    Appointment,
+    MedicalRecord,
+    NotFoundError,
+    ValidationError,
+    Prescription,
 )
+
 
 class PolyclinicService:
     """Сервис для управления данными поликлиники."""
@@ -30,11 +40,23 @@ class PolyclinicService:
         self._next_record_id = 1
         self._next_prescription_id = 1
 
-    def create_patient(self, first_name: str, last_name: str, birth_date: str,
-                      phone: str, insurance_number: str) -> Patient:
+    def create_patient(
+        self,
+        first_name: str,
+        last_name: str,
+        birth_date: str,
+        phone: str,
+        insurance_number: str,
+    ) -> Patient:
         """Создает нового пациента."""
-        patient = Patient(self._next_patient_id, first_name, last_name,
-                         birth_date, phone, insurance_number)
+        patient = Patient(
+            self._next_patient_id,
+            first_name,
+            last_name,
+            birth_date,
+            phone,
+            insurance_number,
+        )
         self.patients.append(patient)
         self._next_patient_id += 1
 
@@ -51,12 +73,25 @@ class PolyclinicService:
                 return patient
         return None
 
-    def create_doctor(self, first_name: str, last_name: str, birth_date: str,
-                     phone: str, specialization: str,
-                     license_number: str) -> Doctor:
+    def create_doctor(
+        self,
+        first_name: str,
+        last_name: str,
+        birth_date: str,
+        phone: str,
+        specialization: str,
+        license_number: str,
+    ) -> Doctor:
         """Создает нового врача."""
-        doctor = Doctor(self._next_doctor_id, first_name, last_name,
-                       birth_date, phone, specialization, license_number)
+        doctor = Doctor(
+            self._next_doctor_id,
+            first_name,
+            last_name,
+            birth_date,
+            phone,
+            specialization,
+            license_number,
+        )
         self.doctors.append(doctor)
         self._next_doctor_id += 1
         return doctor
@@ -68,8 +103,9 @@ class PolyclinicService:
                 return doctor
         return None
 
-    def create_department(self, name: str, floor: int,
-                         head_doctor_id: int) -> Optional[Department]:
+    def create_department(
+        self, name: str, floor: int, head_doctor_id: int
+    ) -> Optional[Department]:
         """Создает новое отделение."""
         head_doctor = self.get_doctor(head_doctor_id)
         if not head_doctor:
@@ -87,8 +123,9 @@ class PolyclinicService:
                 return department
         return None
 
-    def create_room(self, room_number: str, floor: int, room_type: str,
-                   department_id: int) -> Optional[Room]:
+    def create_room(
+        self, room_number: str, floor: int, room_type: str, department_id: int
+    ) -> Optional[Room]:
         """Создает новый кабинет."""
         department = self.get_department(department_id)
         if not department:
@@ -106,11 +143,13 @@ class PolyclinicService:
                 return room
         return None
 
-    def create_service(self, name: str, description: str,
-                      cost: float, duration: int) -> MedicalService:
+    def create_service(
+        self, name: str, description: str, cost: float, duration: int
+    ) -> MedicalService:
         """Создает новую медицинскую услугу."""
-        service = MedicalService(self._next_service_id, name, description,
-                                cost, duration)
+        service = MedicalService(
+            self._next_service_id, name, description, cost, duration
+        )
         self.services.append(service)
         self._next_service_id += 1
         return service
@@ -122,9 +161,16 @@ class PolyclinicService:
                 return service
         return None
 
-    def create_appointment(self, patient_id: int, doctor_id: int, room_id: int,
-                          date: str, time: str, service_id: int,
-                          reason: str = "") -> Optional[Appointment]:
+    def create_appointment(
+        self,
+        patient_id: int,
+        doctor_id: int,
+        room_id: int,
+        date: str,
+        time: str,
+        service_id: int,
+        reason: str = "",
+    ) -> Optional[Appointment]:
         """Создает новую запись на прием."""
         patient = self.get_patient(patient_id)
         doctor = self.get_doctor(doctor_id)
@@ -137,8 +183,16 @@ class PolyclinicService:
         if self._is_time_slot_taken(doctor, date, time):
             raise ValidationError("Время уже занято")
 
-        appointment = Appointment(self._next_appointment_id, patient, doctor,
-                                room, date, time, service, reason)
+        appointment = Appointment(
+            self._next_appointment_id,
+            patient,
+            doctor,
+            room,
+            date,
+            time,
+            service,
+            reason,
+        )
         self.appointments.append(appointment)
         self._next_appointment_id += 1
         return appointment
@@ -146,10 +200,12 @@ class PolyclinicService:
     def _is_time_slot_taken(self, doctor: Doctor, date: str, time: str) -> bool:
         """Проверяет, занято ли время у врача."""
         for appointment in self.appointments:
-            if (appointment.doctor == doctor and
-                appointment.appointment_date == date and
-                appointment.appointment_time == time and
-                appointment.status != "отменен"):
+            if (
+                appointment.doctor == doctor
+                and appointment.appointment_date == date
+                and appointment.appointment_time == time
+                and appointment.status != "отменен"
+            ):
                 return True
         return False
 
@@ -170,11 +226,17 @@ class PolyclinicService:
         for i, patient in enumerate(self.patients):
             if patient.patient_id == patient_id:
                 # Удаляем связанную медицинскую карту
-                self.medical_records = [record for record in self.medical_records
-                                        if record.patient.patient_id != patient_id]
+                self.medical_records = [
+                    record
+                    for record in self.medical_records
+                    if record.patient.patient_id != patient_id
+                ]
                 # Удаляем связанные записи на прием
-                self.appointments = [app for app in self.appointments
-                                     if app.patient.patient_id != patient_id]
+                self.appointments = [
+                    app
+                    for app in self.appointments
+                    if app.patient.patient_id != patient_id
+                ]
                 # Удаляем пациента
                 self.patients.pop(i)
                 return True
@@ -187,11 +249,16 @@ class PolyclinicService:
                 # Проверяем, используется ли врач как заведующий отделением
                 for department in self.departments:
                     if department.head_doctor.doctor_id == doctor_id:
-                        return False  # Нельзя удалить врача, который заведует отделением
+                        return (
+                            False  # Нельзя удалить врача, который заведует отделением
+                        )
 
                 # Удаляем связанные записи на прием
-                self.appointments = [app for app in self.appointments
-                                     if app.doctor.doctor_id != doctor_id]
+                self.appointments = [
+                    app
+                    for app in self.appointments
+                    if app.doctor.doctor_id != doctor_id
+                ]
                 # Удаляем врача
                 self.doctors.pop(i)
                 return True
@@ -202,7 +269,10 @@ class PolyclinicService:
         for i, department in enumerate(self.departments):
             if department.department_id == department_id:
                 # Проверяем, есть ли связанные кабинеты
-                if any(room.department.department_id == department_id for room in self.rooms):
+                if any(
+                    room.department.department_id == department_id
+                    for room in self.rooms
+                ):
                     return False  # Нельзя удалить отделение с кабинетами
 
                 # Удаляем отделение
@@ -228,7 +298,9 @@ class PolyclinicService:
         for i, service in enumerate(self.services):
             if service.service_id == service_id:
                 # Проверяем, используется ли услуга в записях на прием
-                if any(app.service.service_id == service_id for app in self.appointments):
+                if any(
+                    app.service.service_id == service_id for app in self.appointments
+                ):
                     return False  # Нельзя удалить услугу, используемую в записях
 
                 # Удаляем услугу
@@ -251,8 +323,12 @@ class PolyclinicService:
         self._next_diagnosis_id += 1
         return diagnosis
 
-    def create_prescription(self, medication: str, dosage: str, frequency: str, duration: str) -> Prescription:
+    def create_prescription(
+        self, medication: str, dosage: str, frequency: str, duration: str
+    ) -> Prescription:
         """Создает новое назначение."""
-        prescription = Prescription(self._next_prescription_id, medication, dosage, frequency, duration)
+        prescription = Prescription(
+            self._next_prescription_id, medication, dosage, frequency, duration
+        )
         self._next_prescription_id += 1
         return prescription

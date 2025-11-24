@@ -20,8 +20,9 @@ class PolyclinicFileManager:
                         "last_name": p.last_name,
                         "birth_date": p.birth_date,
                         "phone": p.phone,
-                        "insurance_number": p.insurance_number
-                    } for p in service.patients
+                        "insurance_number": p.insurance_number,
+                    }
+                    for p in service.patients
                 ],
                 "doctors": [
                     {
@@ -31,16 +32,18 @@ class PolyclinicFileManager:
                         "birth_date": d.birth_date,
                         "phone": d.phone,
                         "specialization": d.specialization,
-                        "license_number": d.license_number
-                    } for d in service.doctors
+                        "license_number": d.license_number,
+                    }
+                    for d in service.doctors
                 ],
                 "departments": [
                     {
                         "department_id": d.department_id,
                         "name": d.name,
                         "floor": d.floor,
-                        "head_doctor_id": d.head_doctor.doctor_id
-                    } for d in service.departments
+                        "head_doctor_id": d.head_doctor.doctor_id,
+                    }
+                    for d in service.departments
                 ],
                 "rooms": [
                     {
@@ -48,8 +51,9 @@ class PolyclinicFileManager:
                         "room_number": r.room_number,
                         "floor": r.floor,
                         "room_type": r.room_type,
-                        "department_id": r.department.department_id
-                    } for r in service.rooms
+                        "department_id": r.department.department_id,
+                    }
+                    for r in service.rooms
                 ],
                 "services": [
                     {
@@ -57,8 +61,9 @@ class PolyclinicFileManager:
                         "name": s.name,
                         "description": s.description,
                         "cost": s.cost,
-                        "duration": s.duration
-                    } for s in service.services
+                        "duration": s.duration,
+                    }
+                    for s in service.services
                 ],
                 "appointments": [
                     {
@@ -70,12 +75,13 @@ class PolyclinicFileManager:
                         "appointment_time": a.appointment_time,
                         "service_id": a.service.service_id,
                         "reason": a.reason,
-                        "status": a.status
-                    } for a in service.appointments
-                ]
+                        "status": a.status,
+                    }
+                    for a in service.appointments
+                ],
             }
 
-            with open(filename, 'w', encoding='utf-8') as f:
+            with open(filename, "w", encoding="utf-8") as f:
                 json.dump(data, f, ensure_ascii=False, indent=2)
             print(f"Данные успешно сохранены в {filename}")
 
@@ -86,7 +92,7 @@ class PolyclinicFileManager:
     def load_from_json(filename: str) -> PolyclinicService:
         """Загружает данные поликлиники из JSON файла."""
         try:
-            with open(filename, 'r', encoding='utf-8') as f:
+            with open(filename, "r", encoding="utf-8") as f:
                 data = json.load(f)
 
             service = PolyclinicService(data["name"], data["address"])
@@ -98,7 +104,7 @@ class PolyclinicFileManager:
                     patient_data["last_name"],
                     patient_data["birth_date"],
                     patient_data["phone"],
-                    patient_data["insurance_number"]
+                    patient_data["insurance_number"],
                 )
 
             # Загрузка врачей
@@ -109,7 +115,7 @@ class PolyclinicFileManager:
                     doctor_data["birth_date"],
                     doctor_data["phone"],
                     doctor_data["specialization"],
-                    doctor_data["license_number"]
+                    doctor_data["license_number"],
                 )
 
             # Загрузка отделений
@@ -118,7 +124,7 @@ class PolyclinicFileManager:
                     service.create_department(
                         department_data["name"],
                         department_data["floor"],
-                        department_data["head_doctor_id"]
+                        department_data["head_doctor_id"],
                     )
 
             # Загрузка кабинетов
@@ -128,7 +134,7 @@ class PolyclinicFileManager:
                         room_data["room_number"],
                         room_data["floor"],
                         room_data["room_type"],
-                        room_data["department_id"]
+                        room_data["department_id"],
                     )
 
             # Загрузка услуг
@@ -138,7 +144,7 @@ class PolyclinicFileManager:
                         service_data["name"],
                         service_data["description"],
                         service_data["cost"],
-                        service_data["duration"]
+                        service_data["duration"],
                     )
 
             # Загрузка записей на прием
@@ -149,7 +155,9 @@ class PolyclinicFileManager:
                         patient = service.get_patient(appointment_data["patient_id"])
                         doctor = service.get_doctor(appointment_data["doctor_id"])
                         room = service.get_room(appointment_data["room_id"])
-                        medical_service = service.get_service(appointment_data["service_id"])
+                        medical_service = service.get_service(
+                            appointment_data["service_id"]
+                        )
 
                         if all([patient, doctor, room, medical_service]):
                             # Создаем запись на прием
@@ -160,7 +168,7 @@ class PolyclinicFileManager:
                                 appointment_data["appointment_date"],
                                 appointment_data["appointment_time"],
                                 medical_service.service_id,
-                                appointment_data.get("reason", "")
+                                appointment_data.get("reason", ""),
                             )
 
                             # Устанавливаем статус записи
@@ -171,12 +179,14 @@ class PolyclinicFileManager:
                         continue
 
             print(f"Данные успешно загружены из {filename}")
-            print(f"Загружено: {len(service.patients)} пациентов, "
-                  f"{len(service.doctors)} врачей, "
-                  f"{len(service.departments)} отделений, "
-                  f"{len(service.rooms)} кабинетов, "
-                  f"{len(service.services)} услуг, "
-                  f"{len(service.appointments)} записей на прием")
+            print(
+                f"Загружено: {len(service.patients)} пациентов, "
+                f"{len(service.doctors)} врачей, "
+                f"{len(service.departments)} отделений, "
+                f"{len(service.rooms)} кабинетов, "
+                f"{len(service.services)} услуг, "
+                f"{len(service.appointments)} записей на прием"
+            )
             return service
 
         except Exception as e:
@@ -200,7 +210,9 @@ class PolyclinicFileManager:
                 ET.SubElement(patient_elem, "last_name").text = patient.last_name
                 ET.SubElement(patient_elem, "birth_date").text = patient.birth_date
                 ET.SubElement(patient_elem, "phone").text = patient.phone
-                ET.SubElement(patient_elem, "insurance_number").text = patient.insurance_number
+                ET.SubElement(
+                    patient_elem, "insurance_number"
+                ).text = patient.insurance_number
 
             doctors_elem = ET.SubElement(root, "doctors")
             for doctor in service.doctors:
@@ -210,17 +222,25 @@ class PolyclinicFileManager:
                 ET.SubElement(doctor_elem, "last_name").text = doctor.last_name
                 ET.SubElement(doctor_elem, "birth_date").text = doctor.birth_date
                 ET.SubElement(doctor_elem, "phone").text = doctor.phone
-                ET.SubElement(doctor_elem, "specialization").text = doctor.specialization
-                ET.SubElement(doctor_elem, "license_number").text = doctor.license_number
+                ET.SubElement(
+                    doctor_elem, "specialization"
+                ).text = doctor.specialization
+                ET.SubElement(
+                    doctor_elem, "license_number"
+                ).text = doctor.license_number
 
             # Сохранение отделений
             departments_elem = ET.SubElement(root, "departments")
             for department in service.departments:
                 department_elem = ET.SubElement(departments_elem, "department")
-                ET.SubElement(department_elem, "id").text = str(department.department_id)
+                ET.SubElement(department_elem, "id").text = str(
+                    department.department_id
+                )
                 ET.SubElement(department_elem, "name").text = department.name
                 ET.SubElement(department_elem, "floor").text = str(department.floor)
-                ET.SubElement(department_elem, "head_doctor_id").text = str(department.head_doctor.doctor_id)
+                ET.SubElement(department_elem, "head_doctor_id").text = str(
+                    department.head_doctor.doctor_id
+                )
 
             # Сохранение кабинетов
             rooms_elem = ET.SubElement(root, "rooms")
@@ -230,7 +250,9 @@ class PolyclinicFileManager:
                 ET.SubElement(room_elem, "room_number").text = room.room_number
                 ET.SubElement(room_elem, "floor").text = str(room.floor)
                 ET.SubElement(room_elem, "room_type").text = room.room_type
-                ET.SubElement(room_elem, "department_id").text = str(room.department.department_id)
+                ET.SubElement(room_elem, "department_id").text = str(
+                    room.department.department_id
+                )
 
             # Сохранение услуг
             services_elem = ET.SubElement(root, "services")
@@ -238,7 +260,9 @@ class PolyclinicFileManager:
                 service_elem = ET.SubElement(services_elem, "service")
                 ET.SubElement(service_elem, "id").text = str(service_obj.service_id)
                 ET.SubElement(service_elem, "name").text = service_obj.name
-                ET.SubElement(service_elem, "description").text = service_obj.description
+                ET.SubElement(
+                    service_elem, "description"
+                ).text = service_obj.description
                 ET.SubElement(service_elem, "cost").text = str(service_obj.cost)
                 ET.SubElement(service_elem, "duration").text = str(service_obj.duration)
 
@@ -246,18 +270,32 @@ class PolyclinicFileManager:
             appointments_elem = ET.SubElement(root, "appointments")
             for appointment in service.appointments:
                 appointment_elem = ET.SubElement(appointments_elem, "appointment")
-                ET.SubElement(appointment_elem, "id").text = str(appointment.appointment_id)
-                ET.SubElement(appointment_elem, "patient_id").text = str(appointment.patient.patient_id)
-                ET.SubElement(appointment_elem, "doctor_id").text = str(appointment.doctor.doctor_id)
-                ET.SubElement(appointment_elem, "room_id").text = str(appointment.room.room_id)
-                ET.SubElement(appointment_elem, "appointment_date").text = appointment.appointment_date
-                ET.SubElement(appointment_elem, "appointment_time").text = appointment.appointment_time
-                ET.SubElement(appointment_elem, "service_id").text = str(appointment.service.service_id)
+                ET.SubElement(appointment_elem, "id").text = str(
+                    appointment.appointment_id
+                )
+                ET.SubElement(appointment_elem, "patient_id").text = str(
+                    appointment.patient.patient_id
+                )
+                ET.SubElement(appointment_elem, "doctor_id").text = str(
+                    appointment.doctor.doctor_id
+                )
+                ET.SubElement(appointment_elem, "room_id").text = str(
+                    appointment.room.room_id
+                )
+                ET.SubElement(
+                    appointment_elem, "appointment_date"
+                ).text = appointment.appointment_date
+                ET.SubElement(
+                    appointment_elem, "appointment_time"
+                ).text = appointment.appointment_time
+                ET.SubElement(appointment_elem, "service_id").text = str(
+                    appointment.service.service_id
+                )
                 ET.SubElement(appointment_elem, "reason").text = appointment.reason
                 ET.SubElement(appointment_elem, "status").text = appointment.status
 
             tree = ET.ElementTree(root)
-            tree.write(filename, encoding='utf-8', xml_declaration=True)
+            tree.write(filename, encoding="utf-8", xml_declaration=True)
             print(f"Данные успешно сохранены в {filename}")
 
         except Exception as e:
@@ -307,9 +345,14 @@ class PolyclinicFileManager:
                         license_number_elem = doctor_elem.find("license_number")
 
                         # Проверяем, что все необходимые поля существуют и не None
-                        if (first_name_elem is not None and last_name_elem is not None and
-                                birth_date_elem is not None and phone_elem is not None and
-                                specialization_elem is not None and license_number_elem is not None):
+                        if (
+                            first_name_elem is not None
+                            and last_name_elem is not None
+                            and birth_date_elem is not None
+                            and phone_elem is not None
+                            and specialization_elem is not None
+                            and license_number_elem is not None
+                        ):
 
                             first_name = first_name_elem.text
                             last_name = last_name_elem.text
@@ -319,11 +362,24 @@ class PolyclinicFileManager:
                             license_number = license_number_elem.text
 
                             # Проверяем, что текстовые значения не None
-                            if all([first_name, last_name, birth_date, phone, specialization, license_number]):
+                            if all(
+                                [
+                                    first_name,
+                                    last_name,
+                                    birth_date,
+                                    phone,
+                                    specialization,
+                                    license_number,
+                                ]
+                            ):
                                 # Создаем врача через сервис для валидации
                                 doctor = service.create_doctor(
-                                    first_name, last_name, birth_date, phone,
-                                    specialization, license_number
+                                    first_name,
+                                    last_name,
+                                    birth_date,
+                                    phone,
+                                    specialization,
+                                    license_number,
                                 )
                             else:
                                 print("Не все поля врача содержат текст")
@@ -342,10 +398,14 @@ class PolyclinicFileManager:
                     try:
                         name = department_elem.find("name").text
                         floor = int(department_elem.find("floor").text)
-                        head_doctor_id = int(department_elem.find("head_doctor_id").text)
+                        head_doctor_id = int(
+                            department_elem.find("head_doctor_id").text
+                        )
 
                         # Создаем отделение
-                        department = service.create_department(name, floor, head_doctor_id)
+                        department = service.create_department(
+                            name, floor, head_doctor_id
+                        )
                         if not department:
                             print(f"Не удалось создать отделение {name}")
                     except Exception as e:
@@ -363,7 +423,9 @@ class PolyclinicFileManager:
                         department_id = int(room_elem.find("department_id").text)
 
                         # Создаем кабинет
-                        room = service.create_room(room_number, floor, room_type, department_id)
+                        room = service.create_room(
+                            room_number, floor, room_type, department_id
+                        )
                         if not room:
                             print(f"Не удалось создать кабинет {room_number}")
                     except Exception as e:
@@ -381,7 +443,9 @@ class PolyclinicFileManager:
                         duration = int(service_elem.find("duration").text)
 
                         # Создаем услугу
-                        medical_service = service.create_service(name, description, cost, duration)
+                        medical_service = service.create_service(
+                            name, description, cost, duration
+                        )
                     except Exception as e:
                         print(f"Ошибка при загрузке услуги: {e}")
                         continue
@@ -394,8 +458,12 @@ class PolyclinicFileManager:
                         patient_id = int(appointment_elem.find("patient_id").text)
                         doctor_id = int(appointment_elem.find("doctor_id").text)
                         room_id = int(appointment_elem.find("room_id").text)
-                        appointment_date = appointment_elem.find("appointment_date").text
-                        appointment_time = appointment_elem.find("appointment_time").text
+                        appointment_date = appointment_elem.find(
+                            "appointment_date"
+                        ).text
+                        appointment_time = appointment_elem.find(
+                            "appointment_time"
+                        ).text
                         service_id = int(appointment_elem.find("service_id").text)
                         reason = appointment_elem.find("reason").text
                         status = appointment_elem.find("status").text
@@ -415,25 +483,29 @@ class PolyclinicFileManager:
                                 appointment_date,
                                 appointment_time,
                                 service_id,
-                                reason
+                                reason,
                             )
 
                             # Устанавливаем статус записи
                             if appointment and status:
                                 appointment.status = status
                         else:
-                            print(f"Не удалось создать запись на прием: не найдены связанные объекты")
+                            print(
+                                f"Не удалось создать запись на прием: не найдены связанные объекты"
+                            )
                     except Exception as e:
                         print(f"Ошибка при загрузке записи на прием: {e}")
                         continue
 
             print(f"Данные успешно загружены из {filename}")
-            print(f"Загружено: {len(service.patients)} пациентов, "
-                  f"{len(service.doctors)} врачей, "
-                  f"{len(service.departments)} отделений, "
-                  f"{len(service.rooms)} кабинетов, "
-                  f"{len(service.services)} услуг, "
-                  f"{len(service.appointments)} записей на прием")
+            print(
+                f"Загружено: {len(service.patients)} пациентов, "
+                f"{len(service.doctors)} врачей, "
+                f"{len(service.departments)} отделений, "
+                f"{len(service.rooms)} кабинетов, "
+                f"{len(service.services)} услуг, "
+                f"{len(service.appointments)} записей на прием"
+            )
 
             return service
 
